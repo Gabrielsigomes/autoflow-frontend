@@ -7,6 +7,7 @@ Levantamento em 20/10/2026. Projeto de estudo com intenção de evoluir para um 
 - Este arquivo registra o objetivo, o estado atual e as decisões do produto.
 - [Backlog](backlog.md) organiza as entregas, suas dependências e o modelo de tarefa.
 - [Padrões de interface](padroes-interface.md) registra as escolhas visuais e de interação que devem se repetir nas telas.
+- [Requisitos do produto](requisitos-produto.md) organiza os requisitos do documento de gestão automotiva por área, separando requisitos funcionais, regras de negócio, proposta inicial e pontos a confirmar.
 
 O modelo de entidades descreve dados e relações. O plano do produto descreve quem usa, qual problema será resolvido e como reconhecer uma entrega útil. Uma entidade criada não equivale a uma funcionalidade concluída.
 
