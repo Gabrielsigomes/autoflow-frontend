@@ -101,6 +101,8 @@ Antes de implementar uma área de produto, consulte:
 - `docs/produto/README.md` para direção e estado documentados;
 - `docs/produto/requisitos-produto.md` para requisitos de referência, ainda sujeitos a priorização e confirmação;
 - `docs/produto/padroes-interface.md` para propostas visuais iniciais;
+- `docs/boas-praticas-angular.md` para estrutura de pastas, responsabilidades e checklist do frontend;
+- `../docs/codigo-limpo-e-reutilizacao.md` para princípios de código limpo e decisão entre código particular e reutilizável;
 - documentação do backend para contratos HTTP e autenticação.
 
 As rotas de produto, a estrutura final de módulos, o design system, o fluxo de autenticação no navegador e a estratégia de sessão do cliente ainda não estavam implementados/definidos na inspeção. Ao trabalhar nessas áreas, confirme decisões e evidências atuais em vez de transformar propostas em convenções estabelecidas.
