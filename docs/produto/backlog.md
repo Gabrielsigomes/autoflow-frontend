@@ -52,14 +52,24 @@ Para cada tarefa, registrar um resultado funcional e um objetivo de aprendizado.
 
 **Verificação em 20/10/2026:** `npm run build` foi executado e falhou com `Could not resolve "src/styles.css"`. A tarefa permanece aberta. Não houve alteração da configuração durante o levantamento.
 
+**Atualização em 08/11/2026:** as evidências acima são históricas. Estado atual:
+
+- `styles.css` foi movido para `src/styles.css`, e `angular.json` o referencia no build e nos testes, junto com `src/styles.scss`.
+- O arquivo de configuração agora é `.postcssrc.json`.
+- `app.config.ts` registra `providePrimeNG` com o tema Aura.
+- O projeto foi atualizado para Angular 21.2 e PrimeNG 21.1.10 (MIT).
+- `npm run build` termina com sucesso, com aviso de budget (526 kB), e os 3 testes existentes passam.
+
+A tarefa continua aberta: falta a página de demonstração conferida no navegador.
+
 **Escopo:** alinhar os caminhos/configurações existentes, registrar o tema e demonstrar um componente. Preservar standalone e os estilos SCSS que forem necessários.
 
 **Critérios de aceite:**
 
-- [ ] `npm run build` termina com sucesso.
+- [x] `npm run build` termina com sucesso (08/11/2026, com aviso de budget).
 - [ ] As classes Tailwind usadas na página de demonstração produzem o resultado esperado.
 - [ ] Um componente PrimeNG aparece com o tema escolhido.
-- [ ] A configuração de estilos dos testes acompanha a da aplicação.
+- [x] A configuração de estilos dos testes acompanha a da aplicação (08/11/2026).
 - [ ] A página é conferida no navegador e o resultado fica registrado.
 
 **Verificações sugeridas:** build, testes existentes afetados e conferência visual. Rodar build não substitui conferir a aparência da tela.

@@ -1,12 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, Observable, throwError } from 'rxjs';
-import { enviroment } from '../../../environments/environment';
+import { environment } from '../../../environments/environment';
 import { ApiRequest } from './api-request';
 import { createApiError } from './api-error';
 
 @Injectable({
-  provideIn: 'root'
+  providedIn: 'root'
 })
 
 export class ApiService {
@@ -21,7 +21,7 @@ export class ApiService {
         headers: request.headers,
         params: request.params,
         context: request.context,
-        withCredencials: request.withCredencials
+        withCredentials: request.withCredentials
       }
     ).pipe(
       catchError(error => throwError(() => createApiError))
@@ -33,7 +33,7 @@ export class ApiService {
       throw new Error('ApiService aceita somente caminhos internos da API.');
     }
 
-    const baseUrl = enviroment.apiUrl.replace(/\/+$/,'');
+    const baseUrl = environment.apiUrl.replace(/\/+$/,'');
 
     if(!baseUrl){
       throw new Error('A URL da API não foi configurada para este ambiente.');

@@ -25,12 +25,14 @@ Este levantamento não consultou o banco em execução, não aplicou migrações
 
 Foi executado `npm run build` no frontend nesta revisão. O comando terminou com erro `Could not resolve "src/styles.css"`. O arquivo referenciado não existe nesse caminho; o CSS encontrado está na raiz do repositório. Esse resultado confirma a pendência registrada em BASE-01, sem indicar o resultado das outras configurações após sua futura correção. Os testes do frontend não foram executados nesta revisão.
 
+**Atualização em 08/11/2026:** o CSS foi movido para `src/styles.css`, e o frontend foi atualizado para Angular 21.2 e PrimeNG 21.1 (MIT). `npm run build` termina com sucesso, com aviso de budget (526 kB para um limite de aviso de 500 kB), e os 3 testes existentes passam em ChromeHeadless. A aplicação não foi conferida no navegador. Detalhes em [`AGENTS.md`](../../AGENTS.md).
+
 ## 3. Retrato do projeto
 
 | Área | Evidência atual | O que falta para virar uma entrega utilizável |
 | --- | --- | --- |
-| Base Angular | Angular 20 declarado, inicialização standalone, SCSS, PrimeNG 20.4.0 e Tailwind 4 declarados; pastas `core`, `shared`, `layout` e `modulos` criadas e sem conteúdo funcional | Resolver a configuração de estilos e tema; construir páginas e navegação |
-| Configuração visual | `angular.json` aponta para `src/styles.css`, mas o arquivo está na raiz; existe `postcssrc.json` sem o ponto inicial; `app.config.ts` ainda não registra o PrimeNG | Alinhar o caminho do CSS, configurar o PostCSS reconhecido pelo build e registrar o tema; confirmar visualmente |
+| Base Angular | Angular 21.2, inicialização standalone, SCSS, PrimeNG 21.1.10, `@angular/cdk` 21 e Tailwind 4 declarados (08/11/2026); zone.js ainda ativo, com migração para zoneless planejada; pastas `core`, `shared`, `layout` e `modulos` criadas; `core/http` tem apenas um rascunho não utilizado | Migrar para zoneless; remover a página padrão do Angular; construir páginas e navegação |
+| Configuração visual | `angular.json` aponta para `src/styles.css` (Tailwind) e `src/styles.scss`; `.postcssrc.json` configura o Tailwind; `app.config.ts` registra `providePrimeNG` com Aura; o build compila | Demonstrar um componente PrimeNG e classes Tailwind em uma página e conferir no navegador |
 | Telas e rotas | Template padrão do Angular e `routes = []` | Login, contexto da oficina, páginas operacionais e integração HTTP |
 | Autenticação | Código para cookie CSRF, login, emissão de JWT e validação Bearer; testes MockMvc existentes; documentação em `docs/api/autenticacao.md` no backend | Verificar o estado executável atual e integrar o navegador; definir expiração, saída e tratamento de sessão no frontend |
 | Administração | APIs e serviços para usuários, empresas e vínculos; cadastro inicial cria usuário, empresa e vínculo administrador | Definir quem pode executar cada operação e verificar esse acesso no servidor |

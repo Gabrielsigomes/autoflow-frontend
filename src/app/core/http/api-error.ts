@@ -1,42 +1,31 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-interface BodyErrorApi {
+interface ApiErrorBody {
   message?: unknown;
   fields?: unknown;
 }
 
-export class ErrorApi extends Error {
-
+export class ApiError extends Error {
   constructor(
     readonly status: number,
     message: string,
     readonly fields: Readonly<Record<string, string>> ={},
-    readonly cause? unknown
+    cause?: unknown
   ){
-    this.name='ApiError';
+    super(message,{ cause })
+    this.name = 'ApiError';
   }
 }
 
-export function createApiError(error:unknown): ApiError {
-  if(!error instanceof HttpErrorResponse) {
-    return new ApiError(
-      0,
-      'Ocorreu uma falha inesperada!',
-      {},
-      error
-    );
+export function createApiError(error: unknown): ApiError {
+  if (!(error instanceof HttpErrorResponse)) {
+    return new ApiError(0,'Ocorreu uma falha inesperada!',{},error);
   }
   const body = error.error as ApiErrorBody | null;
-  const message = typeof body?.mensagem === 'string'
-    ? body.mensagem
+  const message = typeof body?.message === 'string'
+    ? body.message
     : getDefaultMessage(error.status);
-
-    return new ApiError(
-      error.status,
-      message,
-      getFieldErros(body?.fields),
-      error
-    );
+  return new ApiError(error.status, message,getFieldErros(body?.fields),error);
 }
 
 function getDefaultMessage(status: number): string {
@@ -51,6 +40,6 @@ function getFieldErros(value: unknown): Record<string, string> {
     return {};
   }
   return Object.fromEntries(
-    Object.entries(Value).filter(([, message]) => typeof message === 'string')
+    Object.entries(value).filter(([, message]) => typeof message === 'string')
   ) as Record<string, string>;
 }

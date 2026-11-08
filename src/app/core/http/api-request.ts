@@ -1,12 +1,12 @@
 import { HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
-import { HttpMethod } from '.http-method';
+import { HttpMethod } from './http-method';
 
 export interface ApiRequest<TBody = unknown> {
   method: HttpMethod;
   endpoint: string;
   body?: TBody;
-  headers?: HttoHeaders;
+  headers?: HttpHeaders;
   params?: HttpParams;
   context?: HttpContext;
-  withCredencials?: boolean;
+  withCredentials?: boolean;
 }
