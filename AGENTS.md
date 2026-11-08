@@ -4,9 +4,24 @@ Este guia complementa `../AGENTS.md` com orientações específicas do frontend.
 
 ## Stack e estado observado
 
-- Angular 20, TypeScript 5.9, aplicação standalone, Angular Router, RxJS e `HttpClient`.
-- PrimeNG 20 e `@primeuix/themes` estão declarados. `app.config.ts` registra `providePrimeNG` com Aura, animações e providers globais. Os módulos/componentes PrimeNG usados precisam ser importados em cada componente standalone que os utiliza; o provider global não importa componentes.
-- Tailwind CSS 4 e `@tailwindcss/postcss` estão declarados. `.postcssrc.json` configura o plugin e `src/styles.scss` importa Tailwind. Consulte configuração e arquivos atuais antes de alterar o pipeline visual.
+Versões instaladas em 08/11/2026 (conferidas com `npm ls`):
+
+| Pacote | Versão | Observação |
+| --- | --- | --- |
+| `@angular/*` | 21.2.26 | Em LTS desde 03/06/2026; fim do suporte em 30/06/2027 |
+| `@angular/cli` / `@angular/build` | 21.2.29 | Builder `@angular/build:application` |
+| TypeScript | 5.9.3 | Angular 21 exige `>=5.9 <6.0` |
+| `primeng` | 21.1.10 | Licença MIT. Faixa `^21` no `package.json` |
+| `@angular/cdk` | 21.2.14 | *Peer dependency* exigida pelo PrimeNG 21 |
+| `@primeuix/themes` | 2.0.3 | Licença MIT. Tema Aura |
+| Tailwind CSS / `@tailwindcss/postcss` | 4.x | Via `.postcssrc.json` |
+| `zone.js` | 0.15.1 | Ainda ativo; ver "Detecção de mudanças" |
+
+- Angular 21, aplicação standalone, Angular Router, RxJS e `HttpClient`.
+- **Restrição de licença:** o PrimeNG 22+ e o `@primeuix/themes` 3+ usam a licença PrimeUI (não MIT). Não atualize para essas versões, nem use `@latest`, sem decisão registrada sobre a licença. Mantenha as atualizações dentro das faixas `^21` e `^2`.
+- `app.config.ts` registra `providePrimeNG` com Aura, `provideAnimationsAsync()`, router e `HttpClient`. Os componentes PrimeNG usados precisam ser importados em cada componente standalone que os utiliza; o provider global não importa componentes.
+- Uma varredura do pacote PrimeNG 21.1.10 não encontrou importações de `@angular/animations` (ele usa `@primeuix/motion`). O `provideAnimationsAsync()` pode ser desnecessário, mas a remoção ainda não foi verificada no navegador.
+- Tailwind CSS 4 e `@tailwindcss/postcss` estão declarados. `.postcssrc.json` configura o plugin, e `src/styles.css` importa o Tailwind. Consulte configuração e arquivos atuais antes de alterar o pipeline visual.
 - O ponto de entrada atual é o template de início do Angular. `app.routes.ts` contém uma lista vazia. Os diretórios `core`, `layout`, `modulos` e `shared` encontrados não têm código funcional observado; a estrutura-alvo descrita abaixo orienta novas funcionalidades e não representa código já implementado.
 - A configuração atual registra `provideHttpClient()`, mas não foi encontrado fluxo de telas/serviços de autenticação ou consumo operacional da API. `environment.development.ts` define uma URL local e `environment.ts` ainda tem URL de produção vazia; confirme o uso real antes de depender desses valores.
 
@@ -17,7 +32,8 @@ Este guia complementa `../AGENTS.md` com orientações específicas do frontend.
 - `src/app/app.routes.ts`: definição das rotas Angular.
 - `src/app/app.component.*`: componente raiz e template atual de exemplo.
 - `src/environments/`: configurações selecionadas por substituições do build.
-- `src/styles.scss` e o CSS global referenciado em `angular.json`: estilos globais; `app.component.scss`: estilo local do componente raiz.
+- `src/styles.css` (importa o Tailwind) e `src/styles.scss` (estilos globais próprios, hoje vazio): ambos referenciados em `angular.json` no build e nos testes. `app.component.scss`: estilo local do componente raiz.
+- `src/app/core/http/`: rascunho do `ApiService` e tipos de erro/requisição. Esses arquivos ainda não são importados pela aplicação e, por isso, não passam pela checagem do compilador; contêm erros de digitação e de tipo conhecidos. Não os trate como funcionais.
 - `public/`: arquivos estáticos copiados pelo build.
 - `docs/produto/`: planejamento e requisitos do produto; diferencie requisitos propostos do que está implementado.
 
@@ -73,9 +89,24 @@ Mantenha componentes, serviços e modelos próximos da responsabilidade que aten
 
 ## Configuração a conferir
 
-`angular.json` referencia `src/styles.css`, mas a inspeção encontrou `styles.css` na raiz do frontend e `src/styles.scss` dentro de `src/`. Antes de mexer em estilos ou declarar o build saudável, resolva/valide esse caminho de forma consciente. O guia registra a divergência observada; não afirma resultado de compilação.
+### Detecção de mudanças
 
-O `README.md` ainda informa Angular CLI 19.2.12, enquanto `package.json` declara Angular CLI 20.3.33. Use os arquivos de dependências/configuração atuais para identificar a stack e mantenha o README sincronizado quando houver trabalho de documentação relacionado.
+A aplicação ainda usa zone.js: `app.config.ts` registra `provideZoneChangeDetection({ eventCoalescing: true })`, e `angular.json` inclui `zone.js` (build) e `zone.js`/`zone.js/testing` (testes) nos polyfills. A migração para zoneless é a próxima etapa planejada, mas ainda não foi feita. Enquanto isso, escreva código novo já compatível com zoneless:
+
+- Todo estado exibido no template fica em `signal`/`computed` (ou chega por `async` pipe), nunca em variável comum alterada em `subscribe`, `await` ou `setTimeout`.
+- Componentes novos usam `ChangeDetectionStrategy.OnPush`.
+- Antes de adotar uma biblioteca de terceiros, verifique se ela depende de `NgZone.onStable`, `onMicrotaskEmpty` ou `isStable`.
+
+### Estado do build
+
+Em 08/11/2026, após a atualização para Angular 21 e PrimeNG 21:
+
+- `npm run build` terminou com sucesso, com aviso de budget: pacote inicial de 526,06 kB contra o limite de aviso de 500 kB. Os polyfills (zone.js) representam 34,59 kB.
+- `ng test --watch=false --browsers=ChromeHeadless`: 3 de 3 testes aprovados.
+- A aplicação **não** foi conferida no navegador nessa data.
+- `npm audit` aponta vulnerabilidades moderadas em dependências internas do `@angular/cli` (ferramenta de desenvolvimento, fora do bundle). Não use `npm audit fix --force`: ele propõe rebaixar o CLI para a versão 17.
+
+Use `package.json` e esta seção para identificar a stack atual e mantenha o `README.md` sincronizado ao mudar versões.
 
 As opções de build e teste ficam em `angular.json`; scripts disponíveis estão em `package.json`:
 

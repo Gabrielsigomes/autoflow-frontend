@@ -1,6 +1,8 @@
 # AutoflowFrontEnd
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.12.
+Frontend do AutoFlow. Gerado originalmente com o Angular CLI 19.2.12 e atualizado para **Angular 21.2** (CLI 21.2.29), **PrimeNG 21.1** (MIT), `@primeuix/themes` 2 e **Tailwind CSS 4**.
+
+Requisitos: Node `^20.19`, `^22.12` ou `^24`. As versões detalhadas, restrições de licença e o estado do build estão em [`AGENTS.md`](AGENTS.md).
 
 ## Development server
 

@@ -57,7 +57,7 @@ core      →  pode usar  →  (nada de features)
 
 ## 2. Nomes de arquivos e classes
 
-O projeto usa **sufixos de tipo** no nome do arquivo. Mantenha essa convenção para mais consistência, mesmo que o guia de estilo do Angular 20 os torne opcionais.
+O projeto usa **sufixos de tipo** no nome do arquivo. Mantenha essa convenção para mais consistência, mesmo que o guia de estilo do Angular (desde a versão 20) os torne opcionais.
 
 | Tipo | Arquivo | Classe / símbolo |
 | --- | --- | --- |
@@ -107,12 +107,26 @@ Componentes de apresentação são os candidatos naturais a reutilização. Comp
 - Montagem de URL, tratamento de status HTTP ou leitura de token: isso pertence a `core/`.
 - Regras de negócio do backend, como "CNPJ duplicado" ou "pode desativar?". O componente mostra o resultado e o backend decide.
 
-### APIs modernas do Angular 20
+### APIs modernas do Angular 21
 
 - `inject()` em vez de injeção pelo construtor.
 - `input()`, `output()` e `signal()`/`computed()` para estado local.
 - Controle de fluxo no template com `@if`, `@for` (com `track`) e `@switch`.
 - `ChangeDetectionStrategy.OnPush` em componentes novos.
+
+### Estado e detecção de mudanças (preparação para zoneless)
+
+O projeto ainda usa zone.js, e a migração para zoneless é a próxima etapa planejada. Escreva todo código novo já compatível:
+
+- **Todo dado exibido na tela fica em um signal.** Use `this.clientes.set(lista)` dentro de `subscribe`/`await`, nunca `this.clientes = lista` em uma variável comum.
+- Eventos do template, `ngModel`, `async` pipe e `input()` avisam o Angular sozinhos. O problema só aparece quando uma variável comum é alterada em código assíncrono.
+- `ChangeDetectorRef.markForCheck()` é exceção, reservada à integração com bibliotecas externas que alteram dados por fora do Angular.
+
+### Formulários
+
+- Padrão do projeto: **template-driven (`ngModel`) com estado em signals**. Com um objeto em signal, use `[ngModel]="cliente().nome" (ngModelChange)="atualizar('nome', $event)"` com atualização imutável. Evite `[(ngModel)]="cliente().nome"`, que altera o objeto sem notificar o signal.
+- Reactive Forms ficam para telas com estrutura dinâmica (listas de itens que crescem, validação cruzada complexa). Nesse caso, combine com signals, porque `setValue`/`patchValue` não agendam atualização da tela sem zone.js.
+- Signal Forms (`@angular/forms/signals`) são experimentais no Angular 21. Não use até haver decisão de atualização.
 
 ---
 
@@ -172,7 +186,8 @@ export class ClienteApiService {
 ## 6. Estilos
 
 - O tema e os componentes visuais vêm do PrimeNG com Aura. Layout, espaçamento e responsividade usam utilitários Tailwind.
-- O estilo global fica em `src/styles.scss`. Estilo específico fica no `.scss` do componente.
+- `src/styles.css` importa o Tailwind e deve conter só isso. Estilos globais próprios ficam em `src/styles.scss`. Estilo específico fica no `.scss` do componente.
+- Versões do PrimeNG e do `@primeuix/themes` ficam nas faixas `^21` e `^2` (MIT). Veja a restrição de licença em [`AGENTS.md`](../AGENTS.md).
 - Antes de criar um padrão visual novo, consulte [`padroes-interface.md`](produto/padroes-interface.md).
 - Se o mesmo conjunto de classes se repete em três ou mais telas, isso indica um componente em `shared/`, não uma classe global copiada.
 
