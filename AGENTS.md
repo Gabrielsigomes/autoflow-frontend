@@ -15,7 +15,7 @@ Versões instaladas em 08/11/2026 (conferidas com `npm ls`):
 | `@angular/cdk` | 21.2.14 | *Peer dependency* exigida pelo PrimeNG 21 |
 | `@primeuix/themes` | 2.0.3 | Licença MIT. Tema Aura |
 | Tailwind CSS / `@tailwindcss/postcss` | 4.x | Via `.postcssrc.json` |
-| `zone.js` | 0.15.1 | Ainda ativo; ver "Detecção de mudanças" |
+| `zone.js` | 0.15.1 | Em remoção (migração para zoneless); ver "Detecção de mudanças" |
 
 - Angular 21, aplicação standalone, Angular Router, RxJS e `HttpClient`.
 - **Restrição de licença:** o PrimeNG 22+ e o `@primeuix/themes` 3+ usam a licença PrimeUI (não MIT). Não atualize para essas versões, nem use `@latest`, sem decisão registrada sobre a licença. Mantenha as atualizações dentro das faixas `^21` e `^2`.
@@ -77,6 +77,8 @@ Mantenha componentes, serviços e modelos próximos da responsabilidade que aten
 - Centralize chamadas HTTP em serviços apropriados quando houver fluxos de domínio; mantenha componentes responsáveis pela interação e apresentação, não por copiar regras de negócio do backend.
 - Use `environment` apenas para configuração pública do cliente. Nunca inclua senha, chave de assinatura, segredo ou credencial no bundle Angular.
 - Um guard ou botão oculto controla navegação/apresentação, não autorização de dados. O backend deve validar identidade, permissão, vínculo ativo e isolamento entre empresas.
+- **Tokens nunca vão para `localStorage`, `sessionStorage`, IndexedDB ou cookie legível por JavaScript.** O access token fica só em memória (signal); o refresh token é um cookie `HttpOnly` gerenciado pelo navegador. Decisão e motivos no `README.md`, seção "Sessão e autenticação".
+- Não use `innerHTML` com dados externos nem `DomSanitizer.bypassSecurityTrust*` sem justificativa revisada: XSS anula a proteção do token em memória.
 - Restrinja interceptors às chamadas próprias da API. Não envie Bearer para login, preparação CSRF ou destinos externos; siga exatamente o contrato e os limites descritos no guia de autenticação do backend.
 - Trate carregamento, sucesso, erro, ausência de dados e expiração de acesso quando fizerem parte do fluxo. Não exponha mensagens internas, tokens ou credenciais na interface/logs.
 
@@ -91,17 +93,32 @@ Mantenha componentes, serviços e modelos próximos da responsabilidade que aten
 
 ### Detecção de mudanças
 
-A aplicação ainda usa zone.js: `app.config.ts` registra `provideZoneChangeDetection({ eventCoalescing: true })`, e `angular.json` inclui `zone.js` (build) e `zone.js`/`zone.js/testing` (testes) nos polyfills. A migração para zoneless é a próxima etapa planejada, mas ainda não foi feita. Enquanto isso, escreva código novo já compatível com zoneless:
+**Decisão:** o projeto adota detecção de mudanças **zoneless** (sem zone.js). Motivos, regras, checklist de bibliotecas e diagnóstico estão em [`docs/zoneless.md`](docs/zoneless.md). Leia esse guia antes de criar componentes ou adotar bibliotecas.
+
+**Migração em andamento (09/11/2026):**
+
+| Passo | Estado |
+| --- | --- |
+| Remover `provideZoneChangeDetection` do `app.config.ts` | ✅ Feito (`07471ad`) |
+| `OnPush` no `AppComponent` | ✅ Feito (`012b20b`) |
+| Remover `zone.js` e `zone.js/testing` dos `polyfills` no `angular.json` | ⏳ Pendente |
+| Desinstalar o pacote `zone.js` | ⏳ Pendente |
+| Conferir no navegador e criar a tela de teste com PrimeNG | ⏳ Pendente |
+
+Enquanto os passos pendentes não forem concluídos, o zone.js continua carregado no navegador e nos testes. Não descreva a aplicação como zoneless concluída antes disso.
+
+Regras obrigatórias para código novo:
 
 - Todo estado exibido no template fica em `signal`/`computed` (ou chega por `async` pipe), nunca em variável comum alterada em `subscribe`, `await` ou `setTimeout`.
-- Componentes novos usam `ChangeDetectionStrategy.OnPush`.
-- Antes de adotar uma biblioteca de terceiros, verifique se ela depende de `NgZone.onStable`, `onMicrotaskEmpty` ou `isStable`.
+- Componentes usam `ChangeDetectionStrategy.OnPush`.
+- Não use `NgZone.onStable`, `onMicrotaskEmpty` nem `isStable`. `markForCheck()` só para integrar bibliotecas externas.
+- Antes de adotar uma biblioteca de terceiros, aplique o checklist de [`docs/zoneless.md`](docs/zoneless.md).
 
 ### Estado do build
 
-Em 08/11/2026, após a atualização para Angular 21 e PrimeNG 21:
+Em 09/11/2026, com o provider de zone removido e o `OnPush` aplicado:
 
-- `npm run build` terminou com sucesso, com aviso de budget: pacote inicial de 526,06 kB contra o limite de aviso de 500 kB. Os polyfills (zone.js) representam 34,59 kB.
+- `npm run build` terminou com sucesso, com aviso de budget: pacote inicial de 523,77 kB contra o limite de aviso de 500 kB. O chunk `polyfills` (zone.js) ainda ocupa 34,59 kB; removê-lo deve deixar o pacote em ~489 kB.
 - `ng test --watch=false --browsers=ChromeHeadless`: 3 de 3 testes aprovados.
 - A aplicação **não** foi conferida no navegador nessa data.
 - `npm audit` aponta vulnerabilidades moderadas em dependências internas do `@angular/cli` (ferramenta de desenvolvimento, fora do bundle). Não use `npm audit fix --force`: ele propõe rebaixar o CLI para a versão 17.
@@ -133,7 +150,8 @@ Antes de implementar uma área de produto, consulte:
 - `docs/produto/requisitos-produto.md` para requisitos de referência, ainda sujeitos a priorização e confirmação;
 - `docs/produto/padroes-interface.md` para propostas visuais iniciais;
 - `docs/boas-praticas-angular.md` para estrutura de pastas, responsabilidades e checklist do frontend;
+- `docs/zoneless.md` para detecção de mudanças, regras de estado com signals e o estado da migração zoneless;
 - `../docs/codigo-limpo-e-reutilizacao.md` para princípios de código limpo e decisão entre código particular e reutilizável;
 - documentação do backend para contratos HTTP e autenticação.
 
-As rotas de produto, a estrutura final de módulos, o design system, o fluxo de autenticação no navegador e a estratégia de sessão do cliente ainda não estavam implementados/definidos na inspeção. Ao trabalhar nessas áreas, confirme decisões e evidências atuais em vez de transformar propostas em convenções estabelecidas.
+As rotas de produto, a estrutura final de módulos, o design system e o fluxo de autenticação no navegador ainda não estavam implementados/definidos na inspeção. A estratégia de sessão foi decidida em 09/11/2026 (README, "Sessão e autenticação"), mas ainda não foi implementada. Ao trabalhar nessas áreas, confirme decisões e evidências atuais em vez de transformar propostas em convenções estabelecidas.

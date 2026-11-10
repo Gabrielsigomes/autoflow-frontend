@@ -114,9 +114,9 @@ Componentes de apresentação são os candidatos naturais a reutilização. Comp
 - Controle de fluxo no template com `@if`, `@for` (com `track`) e `@switch`.
 - `ChangeDetectionStrategy.OnPush` em componentes novos.
 
-### Estado e detecção de mudanças (preparação para zoneless)
+### Estado e detecção de mudanças (zoneless)
 
-O projeto ainda usa zone.js, e a migração para zoneless é a próxima etapa planejada. Escreva todo código novo já compatível:
+O projeto adota zoneless, e a migração está em andamento. O guia completo, com exemplos, checklist de bibliotecas e estado da migração, está em [`zoneless.md`](zoneless.md). Resumo:
 
 - **Todo dado exibido na tela fica em um signal.** Use `this.clientes.set(lista)` dentro de `subscribe`/`await`, nunca `this.clientes = lista` em uma variável comum.
 - Eventos do template, `ngModel`, `async` pipe e `input()` avisam o Angular sozinhos. O problema só aparece quando uma variável comum é alterada em código assíncrono.
