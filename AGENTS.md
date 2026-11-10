@@ -77,7 +77,7 @@ Mantenha componentes, serviços e modelos próximos da responsabilidade que aten
 - Centralize chamadas HTTP em serviços apropriados quando houver fluxos de domínio; mantenha componentes responsáveis pela interação e apresentação, não por copiar regras de negócio do backend.
 - Use `environment` apenas para configuração pública do cliente. Nunca inclua senha, chave de assinatura, segredo ou credencial no bundle Angular.
 - Um guard ou botão oculto controla navegação/apresentação, não autorização de dados. O backend deve validar identidade, permissão, vínculo ativo e isolamento entre empresas.
-- **Tokens nunca vão para `localStorage`, `sessionStorage`, IndexedDB ou cookie legível por JavaScript.** O access token fica só em memória (signal); o refresh token é um cookie `HttpOnly` gerenciado pelo navegador. Decisão e motivos no `README.md`, seção "Sessão e autenticação".
+- **Tokens nunca vão para `localStorage`, `sessionStorage`, IndexedDB ou cookie legível por JavaScript.** O access token fica só em memória (signal); o refresh token é um cookie `HttpOnly` gerenciado pelo navegador. Decisão e motivos em `docs/sessao-autenticacao.md`.
 - Não use `innerHTML` com dados externos nem `DomSanitizer.bypassSecurityTrust*` sem justificativa revisada: XSS anula a proteção do token em memória.
 - Restrinja interceptors às chamadas próprias da API. Não envie Bearer para login, preparação CSRF ou destinos externos; siga exatamente o contrato e os limites descritos no guia de autenticação do backend.
 - Trate carregamento, sucesso, erro, ausência de dados e expiração de acesso quando fizerem parte do fluxo. Não exponha mensagens internas, tokens ou credenciais na interface/logs.
@@ -151,7 +151,9 @@ Antes de implementar uma área de produto, consulte:
 - `docs/produto/padroes-interface.md` para propostas visuais iniciais;
 - `docs/boas-praticas-angular.md` para estrutura de pastas, responsabilidades e checklist do frontend;
 - `docs/zoneless.md` para detecção de mudanças, regras de estado com signals e o estado da migração zoneless;
+- `docs/sessao-autenticacao.md` para a estratégia de sessão (access token em memória, refresh token em cookie HttpOnly);
+- `README.md` é a apresentação do projeto (o que é, stack, arquitetura, execução). Não registre nele estado de desenvolvimento ou tarefas pendentes: use `docs/produto/` e este guia;
 - `../docs/codigo-limpo-e-reutilizacao.md` para princípios de código limpo e decisão entre código particular e reutilizável;
 - documentação do backend para contratos HTTP e autenticação.
 
-As rotas de produto, a estrutura final de módulos, o design system e o fluxo de autenticação no navegador ainda não estavam implementados/definidos na inspeção. A estratégia de sessão foi decidida em 09/11/2026 (README, "Sessão e autenticação"), mas ainda não foi implementada. Ao trabalhar nessas áreas, confirme decisões e evidências atuais em vez de transformar propostas em convenções estabelecidas.
+As rotas de produto, a estrutura final de módulos, o design system e o fluxo de autenticação no navegador ainda não estavam implementados/definidos na inspeção. A estratégia de sessão foi decidida em 09/11/2026 (`docs/sessao-autenticacao.md`), mas ainda não foi implementada. Ao trabalhar nessas áreas, confirme decisões e evidências atuais em vez de transformar propostas em convenções estabelecidas.

@@ -1,111 +1,107 @@
-# AutoflowFrontEnd
+# AutoFlow — Frontend
 
-Frontend do AutoFlow. Gerado originalmente com o Angular CLI 19.2.12 e atualizado para **Angular 21.2** (CLI 21.2.29), **PrimeNG 21.1** (MIT), `@primeuix/themes` 2 e **Tailwind CSS 4**.
+Aplicação web do **AutoFlow**, sistema de gestão para oficinas automotivas. Reúne em um só lugar os dados de clientes, veículos e serviços da oficina, com acesso por usuário e separação dos dados de cada empresa.
 
-Requisitos: Node `^20.19`, `^22.12` ou `^24`. As versões detalhadas, restrições de licença e o estado do build estão em [`AGENTS.md`](AGENTS.md).
+Este repositório contém a interface (SPA em Angular). A API, as regras de negócio e a persistência ficam no projeto irmão [`autoflow-backend`](../autoflow-backend) (Java 21 + Spring Boot).
 
-## Sessão e autenticação
+---
 
-> **Status:** decisão de arquitetura registrada em 09/11/2026. O login e o access token já existem no backend; o refresh token, o logout no servidor e a integração no Angular **ainda não foram implementados**. Plano detalhado: [`autoflow-backend/docs/plano-refresh-token.md`](../autoflow-backend/docs/plano-refresh-token.md).
+## Funcionalidades
 
-### A decisão
+| Módulo | Descrição |
+| --- | --- |
+| **Acesso** | Login por e-mail e senha, sessão segura e acesso apenas às oficinas às quais o usuário está vinculado |
+| **Empresas e usuários** | Cadastro de oficinas, usuários e vínculos com perfil por empresa |
+| **Clientes** | Cadastro e busca de clientes, com endereços e histórico |
+| **Veículos** | Cadastro de veículos e vínculo com seus proprietários |
+| **Serviços** | Catálogo de serviços oferecidos pela oficina |
+| **Ordens de serviço** | Abertura, acompanhamento e conclusão dos atendimentos |
 
-| Credencial | Onde fica | Validade | Enviada como |
-| --- | --- | --- | --- |
-| **Access token** (JWT) | **Somente em memória** (signal em `SessaoService`) | Curta: 15 minutos | Header `Authorization: Bearer`, adicionado pelo interceptor apenas para a API própria |
-| **Refresh token** (valor opaco) | **Cookie `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/auth`**, gerenciado pelo navegador | Longa, com limite absoluto | Enviado automaticamente pelo navegador, só para `/auth/refresh` e `/auth/logout` |
+Escopo, requisitos e roadmap do produto: [`docs/produto/README.md`](docs/produto/README.md).
 
-Nenhum token é gravado em `localStorage`, `sessionStorage`, IndexedDB ou cookie legível por JavaScript.
+---
 
-### Por que esta escolha
+## Stack
 
-**1. `localStorage` fica exposto a XSS.** Qualquer script que rode na página, seja de uma falha de XSS, de uma dependência comprometida ou de uma extensão, consegue ler `localStorage.getItem('token')` e enviar o token para fora. O token roubado funciona em qualquer máquina até expirar.
+| Camada | Tecnologia |
+| --- | --- |
+| Framework | [Angular](https://angular.dev) 21.2 (standalone components, Angular Router) |
+| Linguagem | TypeScript 5.9 |
+| Reatividade | Signals + `ChangeDetectionStrategy.OnPush` |
+| Componentes de UI | [PrimeNG](https://primeng.org) 21.1 (licença MIT) + `@angular/cdk` 21 |
+| Tema | `@primeuix/themes` 2 (preset Aura) |
+| Estilos | [Tailwind CSS](https://tailwindcss.com) 4 + SCSS |
+| HTTP | `HttpClient` + RxJS 7.8 |
+| Formulários | Template-driven (`ngModel`) com estado em signals |
+| Build | Angular CLI 21.2 (`@angular/build`, esbuild) |
+| Testes | Jasmine + Karma |
 
-**2. Cookie `HttpOnly` não é legível por JavaScript.** O navegador guarda e envia o refresh token, mas `document.cookie` não o enxerga. Um XSS não consegue copiá-lo.
+---
 
-**3. Access token em memória some ao fechar a aba** e dura só 15 minutos. Se vazar, a janela de uso é curta.
+## Arquitetura
 
-**4. A sessão sobrevive à recarga.** Ao abrir o app, o Angular chama `POST /auth/refresh`: o navegador envia o cookie, e o backend devolve um novo access token. O usuário não precisa entrar de novo.
+- **Standalone:** sem `NgModule`. Cada componente declara as próprias dependências.
+- **Organização por domínio:**
 
-**5. O servidor consegue encerrar sessões.** Como o refresh token fica registrado no banco, logout, desativação do usuário ou suspeita de roubo o revogam de verdade, o que um JWT sozinho não permite.
+  ```text
+  src/app/
+  ├── core/        infraestrutura transversal (HTTP, autenticação)
+  ├── shared/      componentes visuais reutilizáveis, sem regra de negócio
+  ├── features/    funcionalidades por domínio (clientes, veículos, ...)
+  ├── app.config.ts
+  └── app.routes.ts
+  ```
 
-**6. A API continua sem CSRF nas rotas de negócio.** Se o próprio JWT fosse para um cookie, toda rota da API passaria a receber credencial automática e precisaria de proteção CSRF. Mantendo o access token como Bearer, o cookie fica restrito a `/auth`, que já tem CSRF.
+- **Camada HTTP centralizada:** componentes chamam serviços da feature, que usam o `ApiService` de `core/http`. URL base e tratamento de erro ficam num único lugar.
+- **Estado com signals:** todo dado exibido na tela fica em `signal`/`computed`, com componentes `OnPush`, compatível com detecção de mudanças sem zone.js.
 
-**O que esta escolha não resolve:** um XSS ativo ainda pode fazer requisições em nome do usuário enquanto a página está aberta. A proteção reduz o **roubo** e a **persistência** do token, mas não dispensa a prevenção de XSS: sanitização padrão do Angular, nada de `bypassSecurityTrust*` com dados externos e uma Content Security Policy na implantação.
+---
 
-### O que o backend precisará ganhar
+## Segurança
 
-Resumo; os detalhes estão no [plano](../autoflow-backend/docs/plano-refresh-token.md).
+- **Access token (JWT) somente em memória.** Nunca é gravado em `localStorage` ou `sessionStorage`.
+- **Refresh token em cookie `HttpOnly`, `Secure`, `SameSite=Strict`**, inacessível ao JavaScript e restrito às rotas de autenticação.
+- **Proteção CSRF** nas rotas que usam cookie.
+- **Bearer enviado apenas para a API própria**, nunca para domínios externos.
+- **Nenhum segredo no bundle:** `environment` contém só configuração pública.
+- **Autorização decidida no backend.** Guards de rota controlam apenas a navegação.
 
-1. **Tabela `refresh_token`** (nova migração Flyway), guardando apenas o **hash SHA-256** do token, a família, a expiração, o uso e a revogação.
-2. **Login emitindo o cookie** `HttpOnly` do refresh token. O corpo da resposta não muda e continua sem o refresh token.
-3. **`POST /auth/refresh`:** valida o cookie, **rotaciona** o token (cada um é usado uma vez), verifica se o usuário continua ativo e devolve um novo access token.
-4. **Detecção de reuso:** um refresh token já usado que reaparece indica roubo, e toda a família de tokens é revogada.
-5. **`POST /auth/logout`:** revoga a sessão no servidor e apaga o cookie.
-6. **Revogação ao desativar o usuário** ou mudar seu papel.
-7. **Limite de tentativas** em login e refresh.
-8. **Testes** de segurança: atributos do cookie, rotação, reuso, CSRF, expiração e usuário inativo.
-9. **Implantação na mesma origem** (proxy reverso), para que `SameSite=Strict` funcione sem abrir CORS com credenciais.
+Detalhes e justificativas: [`docs/sessao-autenticacao.md`](docs/sessao-autenticacao.md).
 
-### O que o frontend precisará
+---
 
-- `SessaoService` guardando o access token em signal, só em memória.
-- Na inicialização do app: `GET /auth/csrf` seguido de `POST /auth/refresh` para restaurar a sessão.
-- Interceptor que adiciona o Bearer só às rotas da API e, em `401`, faz **um único** refresh compartilhado e repete a requisição uma vez.
-- Logout chamando `POST /auth/logout`.
+## Como executar
 
-## Development server
-
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+**Requisitos:** Node.js `^20.19`, `^22.12` ou `^24` e npm.
 
 ```bash
-ng build
+npm install
 ```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
 
 ```bash
-ng test
+npm start
 ```
 
-## Running end-to-end tests
+A aplicação abre em `http://localhost:4200/` e recarrega a cada alteração.
 
-For end-to-end (e2e) testing, run:
+| Comando | O que faz |
+| --- | --- |
+| `npm start` | Servidor de desenvolvimento |
+| `npm run build` | Build de produção em `dist/` |
+| `npm run watch` | Build de desenvolvimento contínuo |
+| `npm test` | Testes unitários (Karma) |
 
-```bash
-ng e2e
-```
+A URL da API é definida em `src/environments/`.
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+---
 
-## Additional Resources
+## Documentação
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+| Documento | Conteúdo |
+| --- | --- |
+| [`AGENTS.md`](AGENTS.md) | Convenções do frontend, versões e restrições |
+| [`docs/boas-praticas-angular.md`](docs/boas-praticas-angular.md) | Estrutura de pastas, responsabilidades e checklist |
+| [`docs/zoneless.md`](docs/zoneless.md) | Detecção de mudanças e regras de estado com signals |
+| [`docs/sessao-autenticacao.md`](docs/sessao-autenticacao.md) | Estratégia de sessão e autenticação |
+| [`docs/produto/`](docs/produto/) | Plano, requisitos e padrões de interface |
+| [`../docs/codigo-limpo-e-reutilizacao.md`](../docs/codigo-limpo-e-reutilizacao.md) | Princípios de código limpo |
