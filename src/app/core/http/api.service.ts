@@ -24,6 +24,7 @@ export class ApiService {
         withCredentials: request.withCredentials
       }
     ).pipe(
+      
       catchError(error => throwError(() => createApiError))
     );
   }
@@ -39,7 +40,7 @@ export class ApiService {
       throw new Error('A URL da API não foi configurada para este ambiente.');
     }
 
-    const path = endpoint.starsWith('/') ? endpoint : `/${endpoint}`;
+    const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     return `${baseUrl}${path}`;
   }
 
